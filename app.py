@@ -1,53 +1,57 @@
-from flask import Flask, request, render_template, jsonify
-from werkzeug.utils import secure_filename
-from pydub import AudioSegment
-from pydub.utils import which
-import os
 import librosa
-import numpy as np
-
-# Nastavení ffmpeg ručně (Windows fix)
-AudioSegment.converter = which("ffmpeg")
+from flask import Flask, request
+import os
+import soundfile as sf
+from audio.audio_utils import AudioProcessor
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "uploads"
-CONVERTED_FOLDER = "converted"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(CONVERTED_FOLDER, exist_ok=True)
+@app.route('/process_audio', methods=['POST'])
+def process_audio():
+    # Získání cesty k souboru
+    file_path = request.json.get('filePath')
+    processor = AudioProcessor()
+    data = []
+    if not file_path or not os.path.exists(file_path):
+        return {"error": "Soubor nenalezen."}, 400
+    print(f"Kontroluji existenci souboru: {file_path}")
+    if not os.path.exists(file_path):
+        print("Soubor neexistuje.")
+    else:
+        print("Soubor existuje.")
 
-@app.route("/")
-def index():
-    return render_template("index.html")
+    print(file_path)
+    y, sr = sf.read(file_path)
 
-@app.route("/upload", methods=["POST"])
-def upload():
-    if "audio_data" not in request.files:
-        return "No audio data", 400
+    filtered_audio = processor.apply_filters(y)
 
-    audio_file = request.files["audio_data"]
-    filename = secure_filename(audio_file.filename)
-    input_path = os.path.join(UPLOAD_FOLDER, filename)
-    output_path = os.path.join(CONVERTED_FOLDER, filename.rsplit(".", 1)[0] + ".wav")
+    # Detekuj impulzy (vrací seznam)
+    impulses = processor.detect_impulses(filtered_audio, threshold=0.0011)
+    if impulses:
+        start, end, duration = impulses[0]  # vezmeme jen první
+        print(f"✅ Impulz: začátek={start:.4f}s, konec={end:.4f}s, trvání={duration:.4f}s")
 
-    # Ulož originální .webm
-    audio_file.save(input_path)
+        impulse_audio = filtered_audio[int(start * sr):int(end * sr)]
+        features = processor.extract_features(impulse_audio)
+        features['duration'] = duration
+        features['sound_category'] = '1'  # nebo 'klavesnice', jak chceš
 
-    # Převod na WAV
-    audio = AudioSegment.from_file(input_path, format="webm")
-    audio.export(output_path, format="wav")
+        data.append(features)
+        print("✅ Features uloženy.")
+    else:
+        print("⚠️ Žádný impulz nenalezen. Vzorek přeskočen.")
 
-    # Analýza pomocí librosa
-    y, sr = librosa.load(output_path)
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13).mean(axis=1).tolist()
-    rms = float(librosa.feature.rms(y=y).mean())
-    zcr = float(librosa.feature.zero_crossing_rate(y).mean())
+    try:
+        os.remove(file_path)
+        print(f"Soubor {file_path} byl úspěšně smazán.")
+    except FileNotFoundError:
+        print(f"Soubor {file_path} nebyl nalezen.")
+    except Exception as e:
+        print(f"Došlo k chybě při mazání souboru: {e}")
+    return {
+        "message": "Soubor zpracován",
+        "features": data
+    }, 200
 
-    return jsonify({
-        "mfcc": mfcc,
-        "rms": rms,
-        "zcr": zcr
-    })
-
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=5499)
