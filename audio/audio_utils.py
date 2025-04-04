@@ -29,55 +29,6 @@ class AudioProcessor:
         audio_bp = self.bandpass_filter(audio_hp)
         return audio_bp
 
-    def plot_rms(self, audio, threshold=0.0015):
-        rms = librosa.feature.rms(y=audio, frame_length=1024, hop_length=256)[0]
-        times = librosa.times_like(rms, sr=self.rate, hop_length=256)
-
-        plt.figure(figsize=(12, 4))
-        plt.plot(times, rms, label='RMS', color='orange')
-        plt.axhline(threshold, color='red', linestyle='--')
-        plt.xlabel('Čas (s)')
-        plt.ylabel('RMS')
-        plt.title('RMS energie s prahem')
-        plt.grid()
-        plt.legend()
-        plt.show()
-
-    def plot_spectrogram(self, audio):
-        plt.figure(figsize=(12, 5))
-        D = librosa.amplitude_to_db(np.abs(librosa.stft(audio)), ref=np.max)
-        librosa.display.specshow(D, sr=self.rate, x_axis='time', y_axis='log')
-        plt.colorbar(format='%+2.0f dB')
-        plt.title('Spektrogram')
-        plt.xlabel('Čas (s)')
-        plt.ylabel('Frekvence (Hz)')
-        plt.show()
-
-    def detect_impulses(self, audio, threshold=0.0015, min_duration=0.005):
-        rms = librosa.feature.rms(y=audio, frame_length=1024, hop_length=256)[0]
-        above_thresh = rms > threshold
-        impulses = np.diff(above_thresh.astype(int))
-        starts = np.where(impulses == 1)[0]
-        ends = np.where(impulses == -1)[0]
-
-        impulse_list = []
-
-        if len(starts) == 0 or len(ends) == 0:
-            return []
-
-        if ends[0] < starts[0]:
-            ends = ends[1:]
-        if len(ends) < len(starts):
-            starts = starts[:len(ends)]
-
-        for s, e in zip(starts, ends):
-            start_time = librosa.frames_to_time(s, sr=self.rate, hop_length=256)
-            end_time = librosa.frames_to_time(e, sr=self.rate, hop_length=256)
-            duration = end_time - start_time
-            if duration >= min_duration:
-                impulse_list.append((start_time, end_time, duration))
-
-        return impulse_list
 
     def extract_features(self, y):
         features = {
