@@ -9,10 +9,13 @@ from audio.classifier import classify
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 def detect_segments_and_extract_features(audio_file):
-    threshold = os.getenv("THRESHOLD")
-    cooldown_time = os.getenv("COOLDOWN_TIME")
+    threshold = float(os.getenv("THRESHOLD"))
+    cooldown_time = float(os.getenv("COOLDOWN_TIME"))
+    print("Threshold: ", threshold)
+    print("Cooldown time: ", cooldown_time)
+
     processor = AudioProcessor()
     y, sr = sf.read(audio_file)
     filtered_audio = processor.apply_filters(y)
