@@ -5,6 +5,8 @@ import librosa.display
 import scipy.signal as signal
 import noisereduce as nr
 import matplotlib.pyplot as plt
+from dotenv import load_dotenv
+import os
 
 
 class AudioProcessor:

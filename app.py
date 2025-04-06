@@ -12,7 +12,7 @@ app = Flask(__name__)
 def process_audio():
     # Získání cesty k souboru
     file_path = request.json.get('filePath')
-    processor = AudioProcessor()
+
 
     # Kontrola, zda soubor existuje
     if not file_path or not os.path.exists(file_path):

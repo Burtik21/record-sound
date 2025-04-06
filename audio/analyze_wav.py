@@ -6,8 +6,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from audio.audio_utils import AudioProcessor  # 👈 Uprav podle cesty ke třídě
 from audio.classifier import classify
+from dotenv import load_dotenv
+import os
 
-def detect_segments_and_extract_features(audio_file,threshold=0.005, cooldown_time=0.12):
+load_dotenv()
+def detect_segments_and_extract_features(audio_file):
+    threshold = os.getenv("THRESHOLD")
+    cooldown_time = os.getenv("COOLDOWN_TIME")
     processor = AudioProcessor()
     y, sr = sf.read(audio_file)
     filtered_audio = processor.apply_filters(y)
@@ -15,11 +20,11 @@ def detect_segments_and_extract_features(audio_file,threshold=0.005, cooldown_ti
     frame_length = 1024
 
     # Výpočet RMS pro zvuková data
+    #ChatGPT
     rms = librosa.feature.rms(y=filtered_audio, frame_length=frame_length,hop_length=hop_length)[0]
     times_rms = librosa.frames_to_time(range(len(rms)), sr=sr, hop_length=hop_length)
+    #ChatGPT
 
-    # Parametry pro CSV soubor
-    data = []
     start = None
     clicks = 0
     last_end_time = -cooldown_time  # Udržuj čas posledního segmentu, aby byl cooldown zajištěn
