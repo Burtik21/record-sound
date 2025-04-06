@@ -11,12 +11,6 @@ with open('audio/model.pkl', 'rb') as f:
 
 
 def classify(features):
-    """
-    Uloží seznam features do CSV souboru.
-
-    :param features: Seznam slovníků obsahujících různé vlastnosti (features)
-    :param csv_filename: Název CSV souboru pro uložení dat
-    """
     # Převeď seznam features na DataFrame
     df = pd.DataFrame([features])
     x_input = df[input_features]
