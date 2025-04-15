@@ -4,7 +4,7 @@ import librosa.display
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from audio.audio_utils import AudioProcessor  # 👈 Uprav podle cesty ke třídě
+from vendor.audio_utils import AudioProcessor  # 👈 Uprav podle cesty ke třídě
 from audio.classifier import classify
 from dotenv import load_dotenv
 import os

@@ -2,7 +2,6 @@ import librosa
 from flask import Flask, request
 import os
 import soundfile as sf
-from audio.audio_utils import AudioProcessor
 from audio.analyze_wav import detect_segments_and_extract_features
 
 app = Flask(__name__)
